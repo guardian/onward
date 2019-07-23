@@ -23,15 +23,19 @@ type ItemList struct {
 type Item struct {
 	URL        string `json:"url"`
 	LinkText   string `json:"linkText"`
-	ShowByline string `json:"showByline"`
+	ShowByline bool   `json:"showByline"`
 	Byline     string `json:"byline"`
 	Image      string `json:"image"`
-	IsLiveblog string `json:"isLiveBlog"`
+	IsLiveblog bool   `json:"isLiveBlog"`
 }
 
 // CAPIItem is the CAPI iten model
 type CAPIItem struct {
-	ID string `json:"id"`
+	ID       string `json:"id"`
+	WebTitle string `json:"webTitle"`
+	Fields   struct {
+		Byline string `json:"byline"`
+	} `json:"fields"`
 }
 
 // CAPIResponse is the main CAPI response model
@@ -94,7 +98,7 @@ func capiGet(path string) (CAPIResponse, error) {
 	var response CAPIResponse
 	APIKey := "test"
 
-	url := fmt.Sprintf("https://content.guardianapis.com/%s?show-most-viewed=true&api-key=%s", path, APIKey)
+	url := fmt.Sprintf("https://content.guardianapis.com/%s?show-most-viewed=true&api-key=%s&show-fields=byline", path, APIKey)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -121,11 +125,9 @@ func (resp CAPIResponse) asItemList() ItemList {
 	for _, capiItem := range resp.Response.Results {
 		item := Item{
 			URL:        capiItem.ID,
-			LinkText:   "foo",
-			ShowByline: "foo",
-			Byline:     "foo",
-			Image:      "foo",
-			IsLiveblog: "foo",
+			LinkText:   capiItem.WebTitle, // TODO think there's a linkText field too?
+			Byline:     capiItem.Fields.Byline,
+			IsLiveblog: false, // TODO implement
 		}
 
 		items = append(items, item)
