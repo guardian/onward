@@ -21,7 +21,12 @@ type ItemList struct {
 
 // Item is the basic article data model
 type Item struct {
-	URL string `json:"url"`
+	URL        string `json:"url"`
+	LinkText   string `json:"linkText"`
+	ShowByline string `json:"showByline"`
+	Byline     string `json:"byline"`
+	Image      string `json:"image"`
+	IsLiveblog string `json:"isLiveBlog"`
 }
 
 // CAPIItem is the CAPI iten model
@@ -62,12 +67,8 @@ func mostViewedHandler(c *cache.Cache) func(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		respJSON, err := json.Marshal(items)
-		if err != nil {
-			errorResponse(w, err)
-			return
-		}
-
+		respJSON := items.asItemList().asJSON()
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(respJSON)
 		return
 	}
@@ -112,6 +113,37 @@ func capiGet(path string) (CAPIResponse, error) {
 	}
 
 	return response, err
+}
+
+func (resp CAPIResponse) asItemList() ItemList {
+	var items []Item
+
+	for _, capiItem := range resp.Response.Results {
+		item := Item{
+			URL:        capiItem.ID,
+			LinkText:   "foo",
+			ShowByline: "foo",
+			Byline:     "foo",
+			Image:      "foo",
+			IsLiveblog: "foo",
+		}
+
+		items = append(items, item)
+	}
+
+	return ItemList{
+		Heading: "Placeholder heading",
+		Trails:  items,
+	}
+}
+
+func (il ItemList) asJSON() []byte {
+	respJSON, err := json.Marshal(il)
+	if err != nil {
+		log.Fatalf("Unable to marshal item list (should never happen), %s", err)
+	}
+
+	return respJSON
 }
 
 func errorResponse(w http.ResponseWriter, err error) {
